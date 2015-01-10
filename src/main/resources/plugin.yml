@@ -1,0 +1,5 @@
+name: CustomCrafting
+main: com.samoatesgames.customcrafting.CustomCrafting
+version: 1.0
+authors: [SamOatesPlugins]
+description: Add custom crafting recipees to minecraft.

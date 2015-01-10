@@ -1,0 +1,14 @@
+recipe:
+    result:
+        material: "STONE"
+        quantity: 1
+    ingredients:
+        slot_1: "COBBLESTONE"
+        slot_2: "COBBLESTONE"
+        slot_3: "COBBLESTONE"
+        slot_4: "COBBLESTONE"
+        slot_5: "COBBLESTONE"
+        slot_6: "COBBLESTONE"
+        slot_7: "COBBLESTONE"
+        slot_8: "COBBLESTONE"
+        slot_9: "COBBLESTONE"
