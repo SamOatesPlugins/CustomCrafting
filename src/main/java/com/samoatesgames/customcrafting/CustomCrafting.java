@@ -10,6 +10,7 @@ import org.bukkit.Material;
 import org.bukkit.Server;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.ShapedRecipe;
+import org.bukkit.material.MaterialData;
 
 /**
  * The main plugin class
@@ -30,10 +31,8 @@ public final class CustomCrafting extends SamOatesPlugin {
      */
     @Override
     public void onEnable() {
-        super.onEnable();     
-
-        loadRecipes();
-        
+        super.onEnable();
+        loadRecipes();        
         this.logInfo("Succesfully enabled.");
     }
 
@@ -42,15 +41,14 @@ public final class CustomCrafting extends SamOatesPlugin {
      */
     @Override
     public void onDisable() {
-        
+        this.getServer().resetRecipes();
+        this.logInfo("Succesfully disabled.");
     }
     
     /**
      * Register all configuration settings
      */
-    public void setupConfigurationSettings() {
-
-    }
+    public void setupConfigurationSettings() { }
     
     private void loadRecipes() {
         File recipeFolder = new File(this.getDataFolder(), "recipes");
@@ -87,7 +85,11 @@ public final class CustomCrafting extends SamOatesPlugin {
         
         // Load in all recipe files
         for (File recipeFile : recipeFolder.listFiles()) {
-            loadRecipe(recipeFile);
+            try {
+                loadRecipe(recipeFile);
+            } catch (Exception ex) {
+                this.logException("Failed to load custom recipe '" + recipeFile.getName() + "'.", ex);
+            }
         }        
     }
     
@@ -117,21 +119,21 @@ public final class CustomCrafting extends SamOatesPlugin {
         // Load the file
         recipeConfiguration.loadPluginConfiguration(recipeFile);
         
-        Material resultMaterial = Material.valueOf(recipeConfiguration.getSetting(Setting.RecipeResultItem, Material.STONE.name()));
+        MaterialData resultMaterial = parseIngredient(recipeConfiguration.getSetting(Setting.RecipeResultItem, Material.STONE.name()));
         int resultQuantity = recipeConfiguration.getSetting(Setting.RecipeResultQuantity, 1);
         
-        Material[] materials = new Material[] {
-            Material.valueOf(recipeConfiguration.getSetting(Setting.RecipeIngredientSlot01, Material.COBBLESTONE.name())),         
-            Material.valueOf(recipeConfiguration.getSetting(Setting.RecipeIngredientSlot02, Material.COBBLESTONE.name())),         
-            Material.valueOf(recipeConfiguration.getSetting(Setting.RecipeIngredientSlot03, Material.COBBLESTONE.name())),         
-            Material.valueOf(recipeConfiguration.getSetting(Setting.RecipeIngredientSlot04, Material.COBBLESTONE.name())),         
-            Material.valueOf(recipeConfiguration.getSetting(Setting.RecipeIngredientSlot05, Material.COBBLESTONE.name())),         
-            Material.valueOf(recipeConfiguration.getSetting(Setting.RecipeIngredientSlot06, Material.COBBLESTONE.name())),         
-            Material.valueOf(recipeConfiguration.getSetting(Setting.RecipeIngredientSlot07, Material.COBBLESTONE.name())),         
-            Material.valueOf(recipeConfiguration.getSetting(Setting.RecipeIngredientSlot08, Material.COBBLESTONE.name())),         
-            Material.valueOf(recipeConfiguration.getSetting(Setting.RecipeIngredientSlot09, Material.COBBLESTONE.name())),         
+        MaterialData[] materials = new MaterialData[] {
+            parseIngredient(recipeConfiguration.getSetting(Setting.RecipeIngredientSlot01, Material.COBBLESTONE.name())),
+            parseIngredient(recipeConfiguration.getSetting(Setting.RecipeIngredientSlot02, Material.COBBLESTONE.name())),         
+            parseIngredient(recipeConfiguration.getSetting(Setting.RecipeIngredientSlot03, Material.COBBLESTONE.name())),         
+            parseIngredient(recipeConfiguration.getSetting(Setting.RecipeIngredientSlot04, Material.COBBLESTONE.name())),         
+            parseIngredient(recipeConfiguration.getSetting(Setting.RecipeIngredientSlot05, Material.COBBLESTONE.name())),         
+            parseIngredient(recipeConfiguration.getSetting(Setting.RecipeIngredientSlot06, Material.COBBLESTONE.name())),         
+            parseIngredient(recipeConfiguration.getSetting(Setting.RecipeIngredientSlot07, Material.COBBLESTONE.name())),         
+            parseIngredient(recipeConfiguration.getSetting(Setting.RecipeIngredientSlot08, Material.COBBLESTONE.name())),         
+            parseIngredient(recipeConfiguration.getSetting(Setting.RecipeIngredientSlot09, Material.COBBLESTONE.name())),      
         };
-        
+                
         char[] materialMapId = new char[] {
             '*', '#', '@',
             '%', '^', '&',
@@ -144,26 +146,53 @@ public final class CustomCrafting extends SamOatesPlugin {
             String rowMap = "";
             for (int columnIndex = 0; columnIndex < 3; ++columnIndex) {
                 int entryIndex = (rowIndex * 3) + columnIndex;
-                if (materials[entryIndex] == Material.AIR) {
+                if (materials[entryIndex].getItemType() == Material.AIR) {
                     rowMap += " ";
                 } else {
                     rowMap += materialMapId[entryIndex];
                 }
             }
             recipeMap[2 - rowIndex] = rowMap;
+            
+            this.logInfo("Row " + rowIndex + " = " + rowMap);
         }
         
         Server server = this.getServer();
-        ShapedRecipe recipe = new ShapedRecipe(new ItemStack(resultMaterial, resultQuantity));
+        
+        ItemStack resultItem = resultMaterial.toItemStack(resultQuantity);
+        ShapedRecipe recipe = new ShapedRecipe(resultItem);
         recipe.shape(recipeMap);
         
         for (int slot = 0; slot < 9; ++slot) {
-            if (materials[slot] != Material.AIR) {
+            if (materials[slot].getItemType() != Material.AIR) {
                 recipe.setIngredient(materialMapId[slot], materials[slot]);
             }
         }
         
         server.addRecipe(recipe);
         this.logInfo("Loaded Custom Recipe '" + recipeFile.getName() + "'.");
+    }
+    
+    /**
+     * 
+     * @param materialName
+     * @return 
+     */
+    public MaterialData parseIngredient(String materialName) {
+        
+        MaterialData materialData;
+        if (materialName.contains(":")) {
+            String actualMaterialName = materialName.substring(0, materialName.indexOf(":"));
+            String dataString = materialName.substring(actualMaterialName.length() + 1);
+
+            Material material = Material.valueOf(actualMaterialName);
+            materialData = new MaterialData(material);
+            materialData.setData(Byte.parseByte(dataString));
+        } else {
+            Material material = Material.valueOf(materialName);
+            materialData = new MaterialData(material);
+        }        
+        
+        return materialData;
     }
 }
