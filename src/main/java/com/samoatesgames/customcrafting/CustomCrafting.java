@@ -153,8 +153,6 @@ public final class CustomCrafting extends SamOatesPlugin {
                 }
             }
             recipeMap[2 - rowIndex] = rowMap;
-            
-            this.logInfo("Row " + rowIndex + " = " + rowMap);
         }
         
         Server server = this.getServer();
