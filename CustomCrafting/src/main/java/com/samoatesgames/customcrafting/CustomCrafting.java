@@ -50,6 +50,10 @@ public final class CustomCrafting extends SamOatesPlugin {
      */
     public void setupConfigurationSettings() { }
     
+    /**
+     * Load all recipes from the 'recipes' folder.
+     * If the folder does not exist, create it and add a default recipe.
+     */
     private void loadRecipes() {
         File recipeFolder = new File(this.getDataFolder(), "recipes");
         if (!recipeFolder.exists()) {
@@ -94,10 +98,10 @@ public final class CustomCrafting extends SamOatesPlugin {
     }
     
     /**
-     * 
-     * @param recipeFile 
+     * Load a specific recipe file
+     * @param recipeFile The recipe to load
      */
-    private void loadRecipe(File recipeFile) {
+    private void loadRecipe(File recipeFile) throws Exception {
         
         PluginConfiguration recipeConfiguration = new PluginConfiguration(this);
         
@@ -134,7 +138,7 @@ public final class CustomCrafting extends SamOatesPlugin {
             parseIngredient(recipeConfiguration.getSetting(Setting.RecipeIngredientSlot09, Material.COBBLESTONE.name())),      
         };
                 
-        char[] materialMapId = new char[] {
+        final char[] materialMapId = new char[] {
             '*', '#', '@',
             '%', '^', '&',
             '!', '£', '$'
@@ -155,8 +159,6 @@ public final class CustomCrafting extends SamOatesPlugin {
             recipeMap[2 - rowIndex] = rowMap;
         }
         
-        Server server = this.getServer();
-        
         ItemStack resultItem = resultMaterial.toItemStack(resultQuantity);
         ShapedRecipe recipe = new ShapedRecipe(resultItem);
         recipe.shape(recipeMap);
@@ -167,27 +169,29 @@ public final class CustomCrafting extends SamOatesPlugin {
             }
         }
         
+        final Server server = this.getServer();
         server.addRecipe(recipe);
+        
         this.logInfo("Loaded Custom Recipe '" + recipeFile.getName() + "'.");
     }
     
     /**
-     * 
-     * @param materialName
-     * @return 
+     * Parse an ingredient into MaterialData from a config file
+     * @param ingredient The raw ingredient to parse
+     * @return The MaterialData the ingredient represents
      */
-    public MaterialData parseIngredient(String materialName) {
+    public MaterialData parseIngredient(String ingredient) {
         
         MaterialData materialData;
-        if (materialName.contains(":")) {
-            String actualMaterialName = materialName.substring(0, materialName.indexOf(":"));
-            String dataString = materialName.substring(actualMaterialName.length() + 1);
+        if (ingredient.contains(":")) {
+            String actualMaterialName = ingredient.substring(0, ingredient.indexOf(":"));
+            String dataString = ingredient.substring(actualMaterialName.length() + 1);
 
             Material material = Material.valueOf(actualMaterialName);
             materialData = new MaterialData(material);
             materialData.setData(Byte.parseByte(dataString));
         } else {
-            Material material = Material.valueOf(materialName);
+            Material material = Material.valueOf(ingredient);
             materialData = new MaterialData(material);
         }        
         
